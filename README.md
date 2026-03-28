@@ -12,6 +12,9 @@ Build a **super simple serverless API** using:
 Client → API Gateway → Lambda → JSON Response
 ```
 
+<img src="./docs/architecture.png" width="600"/>
+
+
 This project is a beginner-friendly walkthrough that takes you from **local setup** to **deploying a live serverless API on AWS** using Terraform.
 
 ---
@@ -26,7 +29,6 @@ This project is a beginner-friendly walkthrough that takes you from **local setu
   * [Windows Setup](#windows-setup)
 * [Project Structure](#project-structure)
 * [Lambda Function](#lambda-function)
-* [Terraform Configuration](#terraform-configuration)
 * [How to Run the Project](#how-to-run-the-project)
 * [Testing the API](#testing-the-api)
 * [Cleanup](#cleanup)
@@ -298,151 +300,6 @@ def handler(event, context):
 ```
 
 This function receives the request event from API Gateway and returns a JSON response.
-
----
-
-## Terraform Configuration
-
-### `variables.tf`
-
-```hcl
-variable "aws_region" {
-  default = "eu-west-2"
-}
-
-variable "project_name" {
-  default = "simple-api-lambda"
-}
-```
-
-### `main.tf`
-
-```hcl
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 6.0"
-    }
-    archive = {
-      source  = "hashicorp/archive"
-    }
-  }
-}
-
-provider "aws" {
-  region = var.aws_region
-}
-
-data "archive_file" "lambda_zip" {
-  type        = "zip"
-  source_file = "${path.module}/lambda/app.py"
-  output_path = "${path.module}/lambda/app.zip"
-}
-
-resource "aws_iam_role" "lambda_exec_role" {
-  name = "${var.project_name}-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = {
-        Service = "lambda.amazonaws.com"
-      }
-    }]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "basic" {
-  role       = aws_iam_role.lambda_exec_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-}
-
-resource "aws_lambda_function" "hello" {
-  function_name = "${var.project_name}-hello"
-  role          = aws_iam_role.lambda_exec_role.arn
-  runtime       = "python3.12"
-  handler       = "app.handler"
-
-  filename         = data.archive_file.lambda_zip.output_path
-  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
-}
-
-resource "aws_apigatewayv2_api" "api" {
-  name          = "${var.project_name}-api"
-  protocol_type = "HTTP"
-}
-
-resource "aws_apigatewayv2_integration" "lambda" {
-  api_id                 = aws_apigatewayv2_api.api.id
-  integration_type       = "AWS_PROXY"
-  integration_uri        = aws_lambda_function.hello.invoke_arn
-  payload_format_version = "2.0"
-}
-
-resource "aws_apigatewayv2_route" "hello" {
-  api_id    = aws_apigatewayv2_api.api.id
-  route_key = "GET /hello"
-  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
-}
-
-resource "aws_apigatewayv2_stage" "default" {
-  api_id      = aws_apigatewayv2_api.api.id
-  name        = "$default"
-  auto_deploy = true
-}
-
-resource "aws_lambda_permission" "apigw" {
-  statement_id  = "AllowAPIGateway"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.hello.function_name
-  principal     = "apigateway.amazonaws.com"
-
-  source_arn = "${aws_apigatewayv2_api.api.execution_arn}/*/*"
-}
-```
-
-### `outputs.tf`
-
-```hcl
-output "api_url" {
-  value = aws_apigatewayv2_api.api.api_endpoint
-}
-
-output "hello_url" {
-  value = "${aws_apigatewayv2_api.api.api_endpoint}/hello"
-}
-```
-
----
-
-## Optional `.gitignore`
-
-A useful `.gitignore` for this project:
-
-```gitignore
-# Terraform
-.terraform/
-*.tfstate
-*.tfstate.*
-.terraform.lock.hcl
-
-# Lambda build artifacts
-*.zip
-
-# Python
-__pycache__/
-*.pyc
-
-# Environment files
-.env
-
-# OS files
-.DS_Store
-Thumbs.db
-```
 
 ---
 
