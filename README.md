@@ -6,31 +6,47 @@ Build a **super simple serverless API** using:
 * 🌐 API Gateway (HTTP API)
 * 🏗️ Terraform (Infrastructure as Code)
 
-👉 Architecture:
+## Architecture
 
 ```text
 Client → API Gateway → Lambda → JSON Response
 ```
 
-This guide walks you **from zero → deployed API → tested endpoint**.
+This project is a beginner-friendly walkthrough that takes you from **local setup** to **deploying a live serverless API on AWS** using Terraform.
 
 ---
 
-## 🧱 Architecture Overview
+## Table of Contents
 
+* [What You Will Build](#what-you-will-build)
+* [Architecture Overview](#architecture-overview)
+* [Prerequisites](#prerequisites)
 
+  * [Linux(Ubuntu) Setup](#ubuntu-setup)
+  * [Windows Setup](#windows-setup)
+* [Project Structure](#project-structure)
+* [Lambda Function](#lambda-function)
+* [Terraform Configuration](#terraform-configuration)
+* [How to Run the Project](#how-to-run-the-project)
+* [Testing the API](#testing-the-api)
+* [Cleanup](#cleanup)
+* [What I Learned](#what-i-learned)
+* [Common Issues](#common-issues)
+* [Possible Improvements](#possible-improvements)
+* [Why This Project Matters](#why-this-project-matters)
+* [Author](#author)
 
 ---
 
-## 📦 What You Will Build
+## What You Will Build
 
-A simple endpoint:
+A simple API endpoint:
 
-```bash
+```http
 GET /hello
 ```
 
-Returns:
+Expected response:
 
 ```json
 {
@@ -42,25 +58,49 @@ Returns:
 
 ---
 
-## 🛠️ Prerequisites (Ubuntu)
+## Architecture Overview
 
-### 1. Update system
+This project uses the following flow:
+
+1. A client sends a request to API Gateway
+2. API Gateway forwards the request to AWS Lambda
+3. The Lambda function runs Python code
+4. Lambda returns a JSON response
+5. API Gateway sends that response back to the client
+
+This is one of the simplest real examples of a **serverless backend** on AWS.
+
+---
+
+## Prerequisites
+
+Before running this project, you need:
+
+* an AWS account
+* AWS access keys
+* AWS CLI
+* Terraform
+* Python 3
+* Git
+* unzip utility
+
+---
+
+## Linux(Ubuntu) Setup
+
+### 1) Update your system
 
 ```bash
 sudo apt update && sudo apt upgrade -y
 ```
 
----
-
-### 2. Install basic tools
+### 2) Install basic tools
 
 ```bash
-sudo apt install -y curl unzip git
+sudo apt install -y curl unzip git wget gnupg software-properties-common python3 python3-pip
 ```
 
----
-
-### 3. Install AWS CLI
+### 3) Install AWS CLI
 
 ```bash
 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
@@ -74,41 +114,19 @@ Verify:
 aws --version
 ```
 
----
-
-### 4. Configure AWS credentials
+### 4) Install Terraform
 
 ```bash
-aws configure
-```
-
-You will need:
-
-* `AWS_ACCESS_KEY_ID`
-* `AWS_SECRET_ACCESS_KEY`
-
-Get them from:
-
-👉 AWS Management Console
-→ IAM → Users → Create Access Key
-
----
-
-### 5. Install Terraform
-
-```bash
-sudo apt install -y gnupg software-properties-common
-
 wget -O- https://apt.releases.hashicorp.com/gpg | \
 gpg --dearmor | \
-sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
+sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null
 
 echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
 https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
 sudo tee /etc/apt/sources.list.d/hashicorp.list
 
 sudo apt update
-sudo apt install terraform -y
+sudo apt install -y terraform
 ```
 
 Verify:
@@ -117,17 +135,135 @@ Verify:
 terraform -v
 ```
 
----
+### 5) Configure AWS CLI
 
-### 6. Verify AWS access
+```bash
+aws configure
+```
+
+You will be asked for:
+
+* `AWS Access Key ID`
+* `AWS Secret Access Key`
+* default region, for example: `eu-west-2`
+* default output format, for example: `json`
+
+### 6) Verify AWS access
 
 ```bash
 aws sts get-caller-identity
 ```
 
+If this works, your AWS CLI is configured correctly.
+
 ---
 
-## 📁 Project Structure
+## Windows Setup
+
+These steps use **PowerShell**.
+
+### 1) Install Git
+
+Download and install Git for Windows, then verify:
+
+```powershell
+git --version
+```
+
+### 2) Install Python
+
+Download and install Python 3 from the official installer.
+
+Important: during installation, tick **Add Python to PATH**.
+
+Verify:
+
+```powershell
+python --version
+```
+
+### 3) Install AWS CLI
+
+Download and install AWS CLI v2 for Windows.
+
+After installation, verify:
+
+```powershell
+aws --version
+```
+
+### 4) Install Terraform
+
+You have two common options.
+
+#### Option A: Install with Chocolatey
+
+If you already have Chocolatey:
+
+```powershell
+choco install terraform
+```
+
+Verify:
+
+```powershell
+terraform -v
+```
+
+#### Option B: Manual install
+
+* Download the Terraform zip for Windows
+* Extract `terraform.exe`
+* Put it in a folder such as `C:\terraform`
+* Add that folder to your system `PATH`
+
+Then verify:
+
+```powershell
+terraform -v
+```
+
+### 5) Configure AWS CLI
+
+```powershell
+aws configure
+```
+
+Enter:
+
+* `AWS Access Key ID`
+* `AWS Secret Access Key`
+* default region, for example: `eu-west-2`
+* default output format, for example: `json`
+
+### 6) Verify AWS access
+
+```powershell
+aws sts get-caller-identity
+```
+
+---
+
+## Creating AWS Access Keys
+
+To use AWS CLI and Terraform, you need programmatic credentials.
+
+In the AWS Console:
+
+1. Go to **IAM**
+2. Go to **Users**
+3. Create a new user or open an existing user
+4. Create an **Access Key**
+5. Copy:
+
+   * `AWS_ACCESS_KEY_ID`
+   * `AWS_SECRET_ACCESS_KEY`
+
+For learning projects, many people use broad permissions, but in real projects it is better to use **least privilege**.
+
+---
+
+## Project Structure
 
 ```text
 aws-simple-api/
@@ -140,9 +276,9 @@ aws-simple-api/
 
 ---
 
-## 🐍 Lambda Function (Python)
+## Lambda Function
 
-`lambda/app.py`
+File: `lambda/app.py`
 
 ```python
 import json
@@ -161,11 +297,13 @@ def handler(event, context):
     }
 ```
 
+This function receives the request event from API Gateway and returns a JSON response.
+
 ---
 
-## ⚙️ Terraform Configuration
+## Terraform Configuration
 
-### variables.tf
+### `variables.tf`
 
 ```hcl
 variable "aws_region" {
@@ -177,9 +315,7 @@ variable "project_name" {
 }
 ```
 
----
-
-### main.tf
+### `main.tf`
 
 ```hcl
 terraform {
@@ -268,9 +404,7 @@ resource "aws_lambda_permission" "apigw" {
 }
 ```
 
----
-
-### outputs.tf
+### `outputs.tf`
 
 ```hcl
 output "api_url" {
@@ -284,25 +418,63 @@ output "hello_url" {
 
 ---
 
-## 🚀 Deploy the Project
+## Optional `.gitignore`
 
-### 1. Initialize Terraform
+A useful `.gitignore` for this project:
+
+```gitignore
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Lambda build artifacts
+*.zip
+
+# Python
+__pycache__/
+*.pyc
+
+# Environment files
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
+```
+
+---
+
+## How to Run the Project
+
+### 1) Clone the repository
+
+```bash
+git clone git@github.com:omidcodes/terraform-aws-lambda-api.git
+cd terraform-aws-lambda-api
+```
+
+Or with HTTPS:
+
+```bash
+git clone https://github.com/omidcodes/terraform-aws-lambda-api.git
+cd terraform-aws-lambda-api
+```
+
+### 2) Initialize Terraform
 
 ```bash
 terraform init
 ```
 
----
-
-### 2. Plan
+### 3) Review the execution plan
 
 ```bash
 terraform plan
 ```
 
----
-
-### 3. Apply
+### 4) Deploy the infrastructure
 
 ```bash
 terraform apply
@@ -310,56 +482,95 @@ terraform apply
 
 Type:
 
-```bash
+```text
 yes
 ```
 
+Terraform will create:
+
+* an IAM role for Lambda
+* the Lambda function
+* an API Gateway HTTP API
+* a route for `GET /hello`
+* permission for API Gateway to invoke Lambda
+
 ---
 
-## 🌍 Test the API
+## Testing the API
+
+After deployment, get the endpoint:
+
+```bash
+terraform output -raw hello_url
+```
+
+Test with curl:
 
 ```bash
 curl "$(terraform output -raw hello_url)"
 ```
 
-Or open in browser:
+Expected response:
 
-```text
-https://<your-api-id>.execute-api.eu-west-2.amazonaws.com/hello
+```json
+{
+  "message": "Hello from Lambda!",
+  "method": "GET",
+  "path": "/hello"
+}
 ```
+
+You can also open the URL in your browser.
 
 ---
 
-## 🧹 Cleanup (IMPORTANT)
+## Cleanup
 
-Avoid charges:
+To avoid unnecessary AWS charges, destroy the infrastructure when you are done:
 
 ```bash
 terraform destroy
 ```
 
----
+Type:
 
-## 🧠 Key Learnings
-
-### 1. Serverless mindset
-
-* No servers to manage
-* Pay per request
-* Auto scaling by default
+```text
+yes
+```
 
 ---
 
-### 2. API Gateway HTTP API vs REST API
+## What I Learned
 
-* HTTP API → simpler, cheaper
-* REST API → more features but heavier
+This small project helped me understand several core cloud and backend concepts:
 
----
+### 1) Serverless architecture
 
-### 3. Lambda proxy integration
+With AWS Lambda, there is no server to provision or manage manually. AWS runs the code only when a request arrives.
 
-Your Lambda must return:
+### 2) API Gateway as an HTTP front door
+
+API Gateway exposes a public endpoint and forwards the request to Lambda.
+
+### 3) Terraform for Infrastructure as Code
+
+Instead of creating AWS resources manually in the console, Terraform lets us define infrastructure in code and recreate it reliably.
+
+### 4) IAM permissions matter
+
+Even for a tiny project, permissions are essential. Lambda needs an execution role, and API Gateway needs permission to invoke Lambda.
+
+### 5) Deployment workflow
+
+The Terraform workflow is simple and powerful:
+
+```text
+terraform init → terraform plan → terraform apply → terraform destroy
+```
+
+### 6) Lambda response format
+
+When using Lambda proxy integration, the response must follow the expected structure:
 
 ```json
 {
@@ -371,76 +582,80 @@ Your Lambda must return:
 
 ---
 
-### 4. Terraform workflow
+## Common Issues
 
-```bash
-init → plan → apply → destroy
-```
+### `502 Bad Gateway`
 
----
+Usually this means the Lambda response format is wrong.
 
-### 5. IAM is critical
+Make sure your function returns:
 
-* Lambda needs execution role
-* API Gateway needs permission to invoke Lambda
+* `statusCode`
+* `headers`
+* `body`
 
----
+and that `body` is a string, usually JSON encoded with `json.dumps()`.
 
-## ⚠️ Common Issues
+### `AccessDeniedException` or permission errors
 
-### ❌ 502 Bad Gateway
+Possible causes:
 
-👉 Lambda response format is wrong
+* incorrect AWS credentials
+* insufficient IAM permissions
+* missing `aws_lambda_permission`
 
----
+### Terraform does not detect Lambda code changes
 
-### ❌ Permission denied
+Make sure `source_code_hash` is included in the Lambda resource.
 
-👉 Missing:
+### `aws sts get-caller-identity` fails
 
-```hcl
-aws_lambda_permission
-```
+Your AWS CLI credentials are probably incorrect or not configured yet.
 
----
+### API deploys but endpoint does not work
 
-### ❌ Terraform not detecting changes
+Check:
 
-👉 Ensure:
-
-```hcl
-source_code_hash
-```
-
----
-
-## 🔥 Next Improvements
-
-You can extend this project with:
-
-* POST endpoint
-* Query parameters (`?name=Omid`)
-* CORS support
-* Custom domain
-* CI/CD (GitHub Actions)
-* S3 + DynamoDB integration
-* Logging & monitoring (CloudWatch)
+* Lambda function exists
+* API Gateway route exists
+* API Gateway has permission to invoke Lambda
+* region is correct
+* Terraform apply completed successfully
 
 ---
 
-## 💡 Why This Matters
+## Possible Improvements
 
-This tiny project teaches:
+This project is intentionally minimal. Useful next steps include:
 
-* real AWS architecture
-* Infrastructure as Code (Terraform)
-* serverless backend basics
-
-👉 This is **exactly the kind of project recruiters love** for backend roles.
+* add a `POST` endpoint
+* accept query parameters such as `?name=Omid`
+* enable CORS
+* add structured logging
+* set CloudWatch log retention
+* integrate with DynamoDB or S3
+* add GitHub Actions for CI/CD
+* split Terraform into reusable modules
+* use remote Terraform state
 
 ---
 
-## ✍️ Author
+## Why This Project Matters
+
+Although this is a small project, it demonstrates real backend and cloud engineering concepts:
+
+* AWS Lambda
+* API Gateway
+* IAM
+* Terraform
+* Infrastructure as Code
+* serverless API design
+
+It is a strong beginner cloud project and a good portfolio piece for backend/software engineering roles.
+
+---
+
+## Author
 
 **Omid Hashemzadeh**
 Software Engineer
