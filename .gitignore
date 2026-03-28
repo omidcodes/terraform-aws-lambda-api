@@ -1,0 +1,41 @@
+# Terraform working directory and lock files
+.terraform/
+.terraform.lock.hcl
+
+# Terraform state
+*.tfstate
+*.tfstate.*
+
+# Terraform variable files that often contain secrets or local settings
+*.tfvars
+*.tfvars.json
+
+# Terraform plan and crash output
+*.tfplan
+*.plan
+crash.log
+crash.*.log
+
+# Override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI configuration files
+.terraformrc
+terraform.rc
+
+# Generated project artifacts
+lambda/app.zip
+graph.dot
+graph.png
+
+
+
+# Python
+__pycache__/
+*.pyc
+
+# Env
+.env
