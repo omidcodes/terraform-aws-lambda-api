@@ -24,7 +24,6 @@ This project is a beginner-friendly walkthrough that takes you from **local setu
 * [What You Will Build](#what-you-will-build)
 * [Architecture Overview](#architecture-overview)
 * [Prerequisites](#prerequisites)
-
   * [Linux(Ubuntu) Setup](#ubuntu-setup)
   * [Windows Setup](#windows-setup)
 * [Project Structure](#project-structure)
